@@ -18,34 +18,34 @@ import numpy as np
 
 #from torchvision.models
 
-#load image
-img_path = 'skin-guess/cropped.png'
-valid_transform = transforms.Compose([
-    transforms.ToTensor(),
-    transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
-])
+class ImgProcessor:
+    model = None
+    v_transform = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
+    ])
 
-img_npp = Image.open(img_path).convert('RGB')
-img = valid_transform(img_npp)
-img = img.unsqueeze(0)
-img = Variable(img.cuda())
+    def __init__(self):
+        self.model = seg.fcn_resnet101(pretrained=True, progress=True)
+        self.model.cuda()
+        self.model.eval()
+    
+    def process(self, imgPath):
+        #Load image
+        img_npp = Image.open(imgPath).convert('RGB')
+        img = self.v_transform(img_npp)
+        img = img.unsqueeze(0)
+        img = Variable(img.cuda())
 
-#%%
-#load model
-model = seg.fcn_resnet101(pretrained=True, progress=True)
-model.cuda()
-model.eval()
+        #Get result
+        res = self.model(img)
+        _, tmp = res.popitem()[1].squeeze(0).max(0)
+        res_seg = tmp.data.cpu().numpy().squeeze()
+        conv = Image.fromarray(res_seg.astype('uint8'), 'RGB')
 
-#%%
-#result
-res = model(img)
-_, tmp = res.squeeze(0).max(0)
-res_seg = tmp.data.cpu().numpy().squeeze()
+        return conv.convert('L')
 
-#%% Original Image
-plt.imshow(img_npp)
-plt.show()
-
-#%%
-plt.imshow(res_seg)
+p = ImgProcessor()
+res = p.process('skin-guess/cropped.png')
+plt.imshow(img_not_preprocessed)
 plt.show()
