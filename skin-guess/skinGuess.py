@@ -62,14 +62,20 @@ def RelevantPixels(rawImg, mask):
         np.array(chans[B])
     ]
     rel = []
-    i = 0
-    for m in mask.flat:
-        if(m == 0):
+    fm = mask.flat
+    count = len(fm)
+    div = math.floor(count / 40)
+    lower = div * 3
+    upper = lower * 4
+    print('lower: ' + str(lower))
+    print('upper: ' + str(upper))
+    for k in range(lower, upper):
+        if(fm[k] == 0):
             rel.append([
-                chans[R].flat[i], chans[G].flat[i], chans[B].flat[i]
+                chans[R].flat[k], chans[G].flat[k], chans[B].flat[k]
             ])
-        i += 1
     
+    #returns average of second twentieth of image
     return np.array(rel)
 
 def diffColor(a, b):
@@ -89,23 +95,28 @@ def minIndex(a):
 #https://www.abellaskincare.com/blogs/abella-tips/know-your-skin-type-and-color-according-to-the-fitzpatrick-scale
 #Relevant images saved in ./fitzpatrick-tones
 fitz = [
-    (246, 232, 226),
-    (236, 200, 191),
-    (245, 208, 197),
-    (21, 20, 19)
+    (227, 219, 218),
+    (226, 183, 173),
+    (225, 188, 167),
+    (200, 152, 124),
+    (187, 126, 95),
+    (95, 77, 65)
 ]
 p = ImgProcessor()
 
 #%%
-
-res = p.process('skin-guess/cropped.png')
+res = p.process('skin-guess/test-imgs/2.png')
 maskImg = np.array(res.point(ImgThreshold))
 plt.imshow(maskImg)
 plt.show()
 
 #%%
-rawImage = Image.open('skin-guess/cropped.png').convert('RGB')
+rawImage = Image.open('skin-guess/test-imgs/2.png').convert('RGB')
 rel = RelevantPixels(rawImage, maskImg)
-avg = np.mean(rel, axis=0)
+avg = (np.mean(rel, axis=0)).astype(int)
 deltas = [diffColor(f, avg) for f in fitz]
 print(minIndex(deltas) + 1)
+color = Image.new('RGB', (60, 30), color = tuple(avg))
+plt.imshow(color)
+
+#%%
